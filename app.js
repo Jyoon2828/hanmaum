@@ -35,8 +35,36 @@ let photoBackground = null;
 let availableBackgrounds = [];
 const imageCache = new Map();
 const fontCache = new Map();
+const restrictedInAppBrowser = /KAKAOTALK|FBAN|FBAV|Instagram|NAVER\(inapp|DaumApps|; wv\)/i.test(navigator.userAgent);
+const androidDevice = /Android/i.test(navigator.userAgent);
 
 function setMessage(message) { $('#message').textContent = message; }
+function showBrowserNotice() {
+  if (!restrictedInAppBrowser) return;
+  const notice = $('#in-app-warning');
+  notice.hidden = false;
+  if (!androidDevice) {
+    $('#open-browser').hidden = true;
+    notice.querySelector('p').textContent = '카카오톡 안에서는 이미지 저장과 공유가 제한됩니다. 주소를 복사한 뒤 Safari 주소창에 붙여 넣어 주세요.';
+  }
+}
+function externalBrowserUrl() {
+  const scheme = location.protocol === 'http:' ? 'http' : 'https';
+  const path = `${location.host}${location.pathname}${location.search}`;
+  return `intent://${path}#Intent;scheme=${scheme};package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(location.href)};end`;
+}
+async function copyPageAddress() {
+  try {
+    if (navigator.clipboard?.writeText && window.isSecureContext) await navigator.clipboard.writeText(location.href);
+    else {
+      const input = document.createElement('textarea'); input.value = location.href; input.style.position = 'fixed'; input.style.opacity = '0';
+      document.body.append(input); input.select();
+      if (!document.execCommand('copy')) throw new Error('copy');
+      input.remove();
+    }
+    setMessage('주소를 복사했습니다. Chrome이나 Safari 주소창에 붙여 넣어 주세요.');
+  } catch { setMessage('주소를 복사하지 못했습니다. 카카오톡 오른쪽 위 메뉴에서 다른 브라우저로 열어 주세요.'); }
+}
 function setExportReady(ready) {
   if (exporting) return;
   document.querySelectorAll('[data-export]').forEach((button) => {
@@ -483,6 +511,12 @@ function openManualSave() {
 async function exportCard(mode) {
   if (exporting) return;
   if (!currentContent().text.trim()) { setMessage('저장할 글을 먼저 입력하거나 법어를 선택해 주세요.'); return; }
+  if (restrictedInAppBrowser) {
+    showBrowserNotice();
+    setMessage('카카오톡 안에서는 저장·공유가 제한됩니다. 위 안내에서 외부 브라우저를 열어 주세요.');
+    $('#in-app-warning').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' });
+    return;
+  }
   // 모바일의 다운로드·공유 권한은 클릭 직후에만 유지됩니다. 준비가 끝난 이미지로 즉시 실행합니다.
   if (!currentBlob || renderError) {
     setMessage(renderError?.message || '이미지를 준비하고 있습니다. 잠시 후 다시 눌러 주세요.');
@@ -547,6 +581,8 @@ $('#reload-quotes').addEventListener('click', loadQuotes);
 $('#photo-input').addEventListener('change', uploadPhoto);
 $('#readability').addEventListener('change', (event) => { state.readability = event.target.checked; queueRender(); });
 $('#shuffle').addEventListener('click', shuffle);
+$('#open-browser').addEventListener('click', () => { location.href = externalBrowserUrl(); });
+$('#copy-address').addEventListener('click', copyPageAddress);
 $('#manual-save').addEventListener('click', openManualSave);
 $('#close-save-sheet').addEventListener('click', () => $('#save-sheet').close());
 $('#save-sheet').addEventListener('click', (event) => {
@@ -555,4 +591,4 @@ $('#save-sheet').addEventListener('click', (event) => {
   if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) $('#save-sheet').close();
 });
 document.querySelectorAll('[data-export]').forEach((button) => button.addEventListener('click', () => exportCard(button.dataset.export)));
-queueRender(); loadQuotes(); initBackgrounds();
+showBrowserNotice(); queueRender(); loadQuotes(); initBackgrounds();
