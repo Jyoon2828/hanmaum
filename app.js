@@ -45,13 +45,14 @@ function showBrowserNotice() {
   notice.hidden = false;
   if (!androidDevice) {
     $('#open-browser').hidden = true;
+    $('#open-samsung').hidden = true;
     notice.querySelector('p').textContent = '카카오톡 안에서는 이미지 저장과 공유가 제한됩니다. 주소를 복사한 뒤 Safari 주소창에 붙여 넣어 주세요.';
   }
 }
-function externalBrowserUrl() {
+function externalBrowserUrl(packageName) {
   const scheme = location.protocol === 'http:' ? 'http' : 'https';
   const path = `${location.host}${location.pathname}${location.search}`;
-  return `intent://${path}#Intent;scheme=${scheme};package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(location.href)};end`;
+  return `intent://${path}#Intent;scheme=${scheme};package=${packageName};S.browser_fallback_url=${encodeURIComponent(location.href)};end`;
 }
 async function copyPageAddress() {
   try {
@@ -62,7 +63,7 @@ async function copyPageAddress() {
       if (!document.execCommand('copy')) throw new Error('copy');
       input.remove();
     }
-    setMessage('주소를 복사했습니다. Chrome이나 Safari 주소창에 붙여 넣어 주세요.');
+    setMessage('주소를 복사했습니다. Chrome, 삼성 인터넷 또는 Safari 주소창에 붙여 넣어 주세요.');
   } catch { setMessage('주소를 복사하지 못했습니다. 카카오톡 오른쪽 위 메뉴에서 다른 브라우저로 열어 주세요.'); }
 }
 function setExportReady(ready) {
@@ -581,7 +582,8 @@ $('#reload-quotes').addEventListener('click', loadQuotes);
 $('#photo-input').addEventListener('change', uploadPhoto);
 $('#readability').addEventListener('change', (event) => { state.readability = event.target.checked; queueRender(); });
 $('#shuffle').addEventListener('click', shuffle);
-$('#open-browser').addEventListener('click', () => { location.href = externalBrowserUrl(); });
+$('#open-browser').addEventListener('click', () => { location.href = externalBrowserUrl('com.android.chrome'); });
+$('#open-samsung').addEventListener('click', () => { location.href = externalBrowserUrl('com.sec.android.app.sbrowser'); });
 $('#copy-address').addEventListener('click', copyPageAddress);
 $('#manual-save').addEventListener('click', openManualSave);
 $('#close-save-sheet').addEventListener('click', () => $('#save-sheet').close());
