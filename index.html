@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>마음에 머무는 말씀</title>
+  <meta name="description" content="마음에 간직할 글을 나만의 이미지 카드로 만드세요.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='10' fill='%232b716c'/%3E%3Ctext x='9' y='29' font-size='28' fill='white'%3E心%3C/text%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Nanum+Brush+Script&family=Nanum+Myeongjo&family=Nanum+Pen+Script&family=Noto+Sans+KR:wght@400;500;600&family=Song+Myung&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./config.js" defer></script><script src="./app.js" defer></script>
+</head>
+<body>
+  <header><div class="header-inner"><div><h1>마음에 머무는 말씀</h1><p>한 줄의 지혜를 오래 간직하세요</p></div><button class="text-button" data-export="save">저장 ↓</button></div></header>
+  <main>
+    <div class="tabs" role="tablist" aria-label="글 준비 방법"><button id="quote-tab" role="tab" aria-selected="true" aria-controls="quote-panel">법어 고르기</button><button id="custom-tab" role="tab" aria-selected="false" aria-controls="custom-panel" tabindex="-1">직접 입력하기</button></div>
+    <section id="quote-panel" role="tabpanel" aria-labelledby="quote-tab"><button id="quote-picker" aria-haspopup="dialog"><span id="selected-quote">말씀을 불러오고 있습니다.</span><span class="change">변경 ›</span></button><p id="quote-status" class="note" role="status"></p><button id="reload-quotes" hidden>다시 불러오기</button></section>
+    <section id="custom-panel" role="tabpanel" aria-labelledby="custom-tab" hidden><label for="custom-text">마음에 간직하고 싶은 글</label><textarea id="custom-text" maxlength="260" rows="4" placeholder="이곳에 원하는 글을 적어 주세요."></textarea><div class="count"><span>줄바꿈도 카드에 담겨요</span><output id="char-count">0 / 260</output></div><label for="author">작성자 또는 출처 <span class="muted">(선택)</span></label><input id="author" maxlength="80" placeholder="이름이나 출처를 입력해 주세요"></section>
+    <div class="workspace"><section class="preview-section" aria-label="완성 카드 미리보기"><div class="preview-label"><span>카드 미리보기</span><span id="resolution">1080 × 1350 · PNG</span></div><canvas id="preview" width="1080" height="1350" role="img" aria-label="입력한 글의 카드 미리보기"></canvas><p id="render-status" role="status">카드를 준비하고 있어요</p><button id="shuffle" class="text-button">다른 조합 ↻</button></section><div class="tools">
+    <section class="editor-section"><h2>배경 이미지</h2><div id="categories" class="categories" aria-label="배경 분류"></div><div id="backgrounds" class="horizontal" aria-label="배경 선택"></div><input id="photo-input" type="file" accept="image/jpeg,image/png,image/webp" hidden><p id="asset-note" class="note" hidden></p></section>
+    <section class="editor-section"><h2>이미지 비율</h2><div data-control="ratio" class="choices"><button data-value="square"><i class="ratio-icon square"></i>1:1 정방형</button><button data-value="portrait"><i class="ratio-icon portrait"></i>4:5 세로형</button></div></section>
+    <section class="editor-section"><h2>글씨체</h2><div id="fonts" class="horizontal"></div></section>
+    <section class="editor-section"><h2>글씨 크기</h2><div data-control="size" class="choices"><button data-value="small">작게</button><button data-value="auto">자동</button><button data-value="large">크게</button></div><p class="note">글이 길면 카드 안에 들어가도록 크기를 조절해요.</p></section>
+    <section class="editor-section"><h2>글자 위치와 정렬</h2><h3>위치</h3><div data-control="position" class="choices"><button data-value="top">위</button><button data-value="middle">가운데</button><button data-value="bottom">아래</button></div><h3>정렬</h3><div data-control="align" class="choices"><button data-value="left">왼쪽</button><button data-value="center">가운데</button></div></section>
+    <section class="editor-section"><h2>글자색과 가독성</h2><div id="colors" data-control="color" class="choices colors"><button data-value="#ffffff"><i style="background:#fff"></i>흰색</button><button data-value="#292d2c"><i style="background:#292d2c"></i>먹색</button><button data-value="#513a2d"><i style="background:#513a2d"></i>짙은 갈색</button><button data-value="#e5c77e"><i style="background:#e5c77e"></i>금색</button></div><label class="switch-row" for="readability"><span>글자 뒤를 은은하게</span><input id="readability" type="checkbox" role="switch" checked></label></section>
+    <footer><button data-export="share">공유하기 ↗</button><button class="primary" data-export="save">이미지 저장하기 ↓</button></footer>
+    </div></div><p id="message" role="status" aria-live="polite"></p>
+  </main>
+  <dialog id="quote-sheet" aria-labelledby="sheet-title"><div class="sheet-head"><h2 id="sheet-title">법어를 골라 주세요</h2><button id="close-sheet" aria-label="법어 목록 닫기">✕</button></div><div id="quote-list"></div></dialog>
+</body>
+</html>
