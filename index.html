@@ -24,8 +24,9 @@
     <section class="editor-section"><h2>글자 위치와 정렬</h2><h3>위치</h3><div data-control="position" class="choices"><button data-value="top">위</button><button data-value="middle">가운데</button><button data-value="bottom">아래</button></div><h3>정렬</h3><div data-control="align" class="choices"><button data-value="left">왼쪽</button><button data-value="center">가운데</button></div></section>
     <section class="editor-section"><h2>글자색과 가독성</h2><div id="colors" data-control="color" class="choices colors"><button data-value="#ffffff"><i style="background:#fff"></i>흰색</button><button data-value="#292d2c"><i style="background:#292d2c"></i>먹색</button><button data-value="#513a2d"><i style="background:#513a2d"></i>짙은 갈색</button><button data-value="#e5c77e"><i style="background:#e5c77e"></i>금색</button></div><label class="switch-row" for="readability"><span>글자 뒤를 은은하게</span><input id="readability" type="checkbox" role="switch" checked></label></section>
     <footer><button data-export="share">공유하기 ↗</button><button class="primary" data-export="save">이미지 저장하기 ↓</button></footer>
-    </div></div><p id="message" role="status" aria-live="polite"></p>
+    </div></div><div class="save-help"><p id="message" role="status" aria-live="polite"></p><button id="manual-save" class="text-button" hidden>이미지를 직접 열어 저장하기</button></div>
   </main>
   <dialog id="quote-sheet" aria-labelledby="sheet-title"><div class="sheet-head"><h2 id="sheet-title">법어를 골라 주세요</h2><button id="close-sheet" aria-label="법어 목록 닫기">✕</button></div><div id="quote-list"></div></dialog>
+  <dialog id="save-sheet" aria-labelledby="save-sheet-title"><div class="sheet-head"><h2 id="save-sheet-title">이미지 직접 저장하기</h2><button id="close-save-sheet" aria-label="저장 안내 닫기">✕</button></div><p class="save-instruction">아래 이미지를 길게 누른 뒤 <strong>이미지 저장</strong> 또는 <strong>사진에 저장</strong>을 선택해 주세요.</p><img id="save-preview" alt="저장할 말씀 이미지"></dialog>
 </body>
 </html>

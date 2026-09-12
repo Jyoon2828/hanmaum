@@ -27,6 +27,7 @@ let renderVersion = 0;
 let pendingRender = Promise.resolve();
 let renderError = null;
 let currentBlob = null;
+let currentObjectUrl = null;
 let exporting = false;
 let loadingQuotes = false;
 let photoUrl = null;
@@ -36,6 +37,18 @@ const imageCache = new Map();
 const fontCache = new Map();
 
 function setMessage(message) { $('#message').textContent = message; }
+function setExportReady(ready) {
+  if (exporting) return;
+  document.querySelectorAll('[data-export]').forEach((button) => {
+    button.disabled = !ready;
+    button.setAttribute('aria-disabled', String(!ready));
+  });
+}
+function refreshObjectUrl(blob) {
+  if (currentObjectUrl) URL.revokeObjectURL(currentObjectUrl);
+  currentObjectUrl = blob ? URL.createObjectURL(blob) : null;
+  $('#manual-save').hidden = !blob;
+}
 function withTimeout(promise, ms, message) {
   let timer;
   return Promise.race([promise, new Promise((_, reject) => {
@@ -426,7 +439,7 @@ function canvasToBlob(target) {
 }
 function queueRender() {
   const version = ++renderVersion; const snapshot = { ...state }; const content = currentContent();
-  currentBlob = null; renderError = null;
+  currentBlob = null; renderError = null; refreshObjectUrl(null); setExportReady(false);
   $('#render-status').textContent = '카드를 준비하고 있어요';
   pendingRender = (async () => {
     try {
@@ -444,9 +457,10 @@ function queueRender() {
       $('#resolution').textContent = `1080 × ${canvas.height} · PNG`;
       $('#render-status').textContent = content.text.trim() ? (layout.body.size < 24 ? '글이 길어 작게 표시됩니다. 저장 전에 확인해 주세요.' : '지금 보이는 모습 그대로 저장돼요') : '법어를 고르거나 직접 글을 입력해 주세요';
       currentBlob = content.text.trim() ? blob : null;
+      refreshObjectUrl(currentBlob); setExportReady(Boolean(currentBlob));
     } catch (error) {
       if (version !== renderVersion) return;
-      renderError = error; $('#render-status').textContent = error.message;
+      renderError = error; $('#render-status').textContent = error.message; setExportReady(false);
     }
   })();
   return pendingRender;
@@ -457,34 +471,44 @@ function filename() {
 }
 function download(blob, name) {
   const url = URL.createObjectURL(blob); const link = document.createElement('a');
-  link.href = url; link.download = name; document.body.append(link); link.click(); link.remove();
+  link.href = url; link.download = name; link.rel = 'noopener'; document.body.append(link); link.click(); link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+function openManualSave() {
+  if (!currentBlob || !currentObjectUrl) { setMessage('이미지를 먼저 준비해 주세요.'); return; }
+  const preview = $('#save-preview');
+  preview.src = currentObjectUrl;
+  $('#save-sheet').showModal();
 }
 async function exportCard(mode) {
   if (exporting) return;
   if (!currentContent().text.trim()) { setMessage('저장할 글을 먼저 입력하거나 법어를 선택해 주세요.'); return; }
+  // 모바일의 다운로드·공유 권한은 클릭 직후에만 유지됩니다. 준비가 끝난 이미지로 즉시 실행합니다.
+  if (!currentBlob || renderError) {
+    setMessage(renderError?.message || '이미지를 준비하고 있습니다. 잠시 후 다시 눌러 주세요.');
+    return;
+  }
   exporting = true;
   document.querySelectorAll('[data-export]').forEach((button) => { button.disabled = true; button.setAttribute('aria-busy', 'true'); });
   setMessage('이미지를 준비하고 있습니다.');
   try {
-    // 준비된 Blob은 클릭 순간 바로 공유해 Android의 사용자 활성화를 유지합니다.
-    if (!currentBlob) {
-      let observed;
-      do { observed = pendingRender; await observed; } while (observed !== pendingRender);
-    }
-    if (renderError) throw renderError;
     const blob = currentBlob;
     if (!blob) throw new Error('저장할 글을 먼저 입력하거나 법어를 선택해 주세요.');
     const name = filename(); const file = new File([blob], name, { type: 'image/png' });
-    if (mode === 'share' && navigator.share && navigator.canShare?.({ files: [file] })) {
+    if (mode === 'share' && window.isSecureContext && navigator.share && navigator.canShare?.({ files: [file] })) {
       try { await navigator.share({ files: [file], title: '마음에 머무는 말씀' }); setMessage('공유했습니다.'); }
       catch (error) {
         if (error.name === 'AbortError') { setMessage(''); return; }
-        download(blob, name); setMessage('공유 창을 열 수 없어 이미지로 저장했습니다.');
+        setMessage('공유 창을 열지 못했습니다. 아래 직접 저장 버튼을 이용해 주세요.');
       }
-    } else { download(blob, name); setMessage(mode === 'share' ? '이미지 공유를 지원하지 않아 PNG로 저장했습니다.' : '이미지 저장을 시작했습니다. 다운로드 폴더를 확인해 주세요.'); }
+    } else {
+      download(blob, name);
+      setMessage(mode === 'share'
+        ? (window.isSecureContext ? '이 브라우저는 이미지 공유를 지원하지 않아 PNG 저장을 시작했습니다.' : '보안 연결(HTTPS)이 아니어서 공유 대신 PNG 저장을 시작했습니다.')
+        : 'PNG 저장을 시작했습니다. 저장되지 않으면 아래 직접 저장 버튼을 눌러 주세요.');
+    }
   } catch (error) { setMessage(error.message || '저장하지 못했습니다. 다시 시도해 주세요.'); }
-  finally { exporting = false; document.querySelectorAll('[data-export]').forEach((button) => { button.disabled = false; button.removeAttribute('aria-busy'); }); }
+  finally { exporting = false; document.querySelectorAll('[data-export]').forEach((button) => { button.disabled = !currentBlob; button.setAttribute('aria-disabled', String(!currentBlob)); button.removeAttribute('aria-busy'); }); }
 }
 function pickDifferent(items, current) {
   const alternatives = items.filter((item) => item.id !== current); const options = alternatives.length ? alternatives : items;
@@ -523,5 +547,12 @@ $('#reload-quotes').addEventListener('click', loadQuotes);
 $('#photo-input').addEventListener('change', uploadPhoto);
 $('#readability').addEventListener('change', (event) => { state.readability = event.target.checked; queueRender(); });
 $('#shuffle').addEventListener('click', shuffle);
+$('#manual-save').addEventListener('click', openManualSave);
+$('#close-save-sheet').addEventListener('click', () => $('#save-sheet').close());
+$('#save-sheet').addEventListener('click', (event) => {
+  if (event.target !== $('#save-sheet')) return;
+  const rect = $('#save-sheet').getBoundingClientRect();
+  if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) $('#save-sheet').close();
+});
 document.querySelectorAll('[data-export]').forEach((button) => button.addEventListener('click', () => exportCard(button.dataset.export)));
 queueRender(); loadQuotes(); initBackgrounds();
